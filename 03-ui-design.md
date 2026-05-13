@@ -442,6 +442,26 @@ ctx.stroke()  // ← 1回で済む
 - **テキスト更新は画像更新より大幅に速い** — 即時性が必要な表示にはテキストを使う
 - **全ブリッジ呼び出しを直列化** — `await` を必ず使う。並行呼び出しは接続クラッシュの原因になる
 
+## SDK の既知のタイポ
+
+### `borderRadius` → 実際は `borderRdaius`
+
+SDKに**スペルミスが存在します**。`borderRadius` と書いてもサイレントに無視されます。
+
+```typescript
+// ❌ 動かない（正しいスペルだが SDK が認識しない）
+new TextContainerProperty({
+  borderRadius: 8,
+})
+
+// ✅ 動く（SDK のタイポに合わせる）
+new TextContainerProperty({
+  borderRdaius: 8,  // 'a' と 'i' が逆
+})
+```
+
+SDK が将来修正された場合は `borderRadius` に戻す必要があります。
+
 ## フォント・テキスト計測
 
 ピクセル精度のレイアウト計算には `@evenrealities/pretext` ライブラリを使用。詳細は [06-font-measurement.md](06-font-measurement.md) を参照。
