@@ -26,6 +26,7 @@ Even Realities G2スマートグラス向けアプリ開発のリファレンス
 | [06-font-measurement.md](06-font-measurement.md) | ピクセル精度のテキストレイアウト計算 |
 | [07-build-and-deploy.md](07-build-and-deploy.md) | パッケージングとEven Hubへの公開 |
 | [08-ble-protocol.md](08-ble-protocol.md) | 低レベルBLEプロトコル（上級者向け・SDK非経由の直接制御） |
+| [09-aivela-ring.md](09-aivela-ring.md) | AIVELA Ring Pro をG2入力デバイスとして使う方法・R1との比較 |
 
 ## G2 ハードウェア仕様
 
