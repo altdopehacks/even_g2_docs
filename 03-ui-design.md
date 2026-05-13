@@ -116,6 +116,46 @@ await bridge.updateImageRawData({
 - **画像送信は直列** — 同時送信不可。必ず1つ完了後に次を送る
 - **コンテナ作成後は必ず内容を送信** — 作成直後はプレースホルダー（空）
 
+## GIFアニメーション（非公式・実験的）
+
+SDK公式は「no animations」と明記していますが、以下の手順で疑似アニメーションが実現できます。
+
+```typescript
+import { parseGIF, decompressFrames } from 'gifuct-js'
+
+async function playGif(bridge: EvenAppBridge, gifUrl: string) {
+  const res = await fetch(gifUrl)
+  const buf = await res.arrayBuffer()
+  const frames = decompressFrames(parseGIF(buf), true)
+
+  const canvas = document.createElement('canvas')
+  // 30×30px程度まで縮小が必須（大きいと転送が追いつかない）
+  canvas.width = 30
+  canvas.height = 30
+  const ctx = canvas.getContext('2d')!
+
+  for (const frame of frames) {
+    // フレームをCanvasに描画 → 4bitグレースケールに変換
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+    const pixelData = rgbaToGrayscale4bit(imageData.data)
+
+    // 画像送信は直列（前の完了を待つ）
+    await bridge.updateImageRawData({
+      containerID: 1,
+      containerName: 'gif',
+      imageData: pixelData,
+    })
+
+    await new Promise(r => setTimeout(r, frame.delay))
+  }
+}
+```
+
+**制約:**
+- **30×30px程度に縮小が必須** — BLE帯域の制約でそれ以上は転送が追いつかない
+- FPSは低め（BLE転送時間に依存）
+- 画像コンテナのサイズ制限（最大288×144px）は通常通り適用される
+
 ## よく使うUIパターン
 
 ### 疑似ボタン

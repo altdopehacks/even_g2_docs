@@ -113,6 +113,15 @@ if (deviceInfo) {
 | `isDisconnected()` | boolean | 切断済み |
 | `isConnectionFailed()` | boolean | 接続失敗 |
 
+### DeviceStatus のプロパティ
+
+| プロパティ | 型 | 説明 |
+|---|---|---|
+| `batteryLevel` | number | バッテリー残量（%） |
+| `isWearing` | boolean | 装着中かどうか |
+| `isCharging` | boolean | 充電中かどうか |
+| `isInCase` | boolean | ケースに収納されているかどうか |
+
 ### リアルタイムステータス監視
 
 ```typescript
@@ -120,6 +129,8 @@ const unsubscribe = bridge.onDeviceStatusChanged(status => {
   console.log('バッテリー:', status.batteryLevel, '%')
   console.log('接続:', status.isConnected())
   console.log('装着:', status.isWearing)
+  console.log('充電中:', status.isCharging)
+  console.log('ケース収納:', status.isInCase)
 })
 
 // 不要になったら解除

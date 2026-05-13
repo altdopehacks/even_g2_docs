@@ -229,6 +229,23 @@ my-app/
     └── main.ts       # アプリロジック
 ```
 
+## 開発中の既知の制限
+
+### GPS（位置情報）はサイドロード中に動作しない
+
+`navigator.geolocation` はEven HubのWebViewで利用可能ですが、**QRコードサイドロードでの開発中は `PERMISSION_DENIED` が返ります**。Even Hub開発者ポータルに正式アップロードしたアプリとしてインストールした場合のみ機能します。
+
+```typescript
+// 開発中（QRサイドロード）→ PERMISSION_DENIED
+// 本番（Hub正式インストール）→ 動作する
+navigator.geolocation.getCurrentPosition(
+  (pos) => console.log(pos.coords),
+  (err) => console.error(err.code)  // 開発中は code=1 (PERMISSION_DENIED)
+)
+```
+
+GPS機能を使うアプリは、実機テストの最終確認を正式インストール後に行ってください。
+
 ## 次のステップ
 
 - [UIの構築](03-ui-design.md) — コンテナ・テキスト・リスト・画像の使い方
