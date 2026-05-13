@@ -1,0 +1,95 @@
+# Even Realities G2 開発ドキュメント
+
+Even Realities G2スマートグラス向けアプリ開発のリファレンスドキュメント集です。
+
+## ドキュメント一覧
+
+| ドキュメント | 内容 |
+|---|---|
+| [01-quickstart.md](01-quickstart.md) | プロジェクト作成からシミュレーター動作確認まで |
+| [02-sdk-reference.md](02-sdk-reference.md) | SDK全メソッド・型・イベントのリファレンス |
+| [03-ui-design.md](03-ui-design.md) | 576×288px表示向けUIデザインガイド |
+| [04-input-handling.md](04-input-handling.md) | タッチパッド・リング入力とライフサイクルイベント |
+| [05-device-features.md](05-device-features.md) | マイク・IMU・ストレージなどハードウェア機能 |
+| [06-font-measurement.md](06-font-measurement.md) | ピクセル精度のテキストレイアウト計算 |
+| [07-build-and-deploy.md](07-build-and-deploy.md) | パッケージングとEven Hubへの公開 |
+| [08-ble-protocol.md](08-ble-protocol.md) | 低レベルBLEプロトコル（上級者向け・SDK非経由の直接制御） |
+
+## G2 ハードウェア仕様
+
+| 項目 | 仕様 |
+|---|---|
+| ディスプレイ解像度 | 576 × 288 px |
+| カラー深度 | 4ビットグレースケール（16段階の緑） |
+| カメラ | なし |
+| スピーカー | なし |
+| 接続方式 | Bluetooth 5.2 |
+| 入力 | フレームのタッチパッド、オプションのR1リングコントローラー |
+
+## Claude Code スキル一覧
+
+このプロジェクトには `everything-evenhub` プラグインがインストールされています。
+
+```bash
+/quickstart <アプリ名>           # 新規プロジェクト作成
+/template <アプリ名> --minimal   # テンプレートから作成
+/glasses-ui "表示内容"           # UI実装
+/handle-input "入力処理内容"     # 入力ハンドリング実装
+/device-features "機能内容"      # ハードウェア機能実装
+/font-measurement "計測内容"     # テキストサイズ計算
+/test-with-simulator "内容"      # シミュレーターでテスト
+/build-and-deploy                # ビルドとパッケージング
+/sdk-reference <API名>           # SDK APIリファレンス参照
+/design-guidelines "内容"        # デザインガイドライン参照
+```
+
+## Kotlin / Wasm での SDK 利用
+
+JavaScript 以外の環境から Even Hub SDK を呼び出す場合、Kotlin Multiplatform + Compose を使った実装例があります（[EH-InNovel](https://github.com/even-realities/EH-InNovel)）。
+
+アーキテクチャ:
+
+```
+Kotlin/Wasm コード → JS interop → @evenrealities/even_hub_sdk
+```
+
+Kotlin から JS ライブラリを呼び出す際は [`@JsModule` アノテーション](https://kotlinlang.org/docs/js-modules.html) でバインディングを定義します。SDK 自体は npm パッケージなので通常の `npm install` で導入可能です。
+
+> ほとんどのアプリは TypeScript で十分です。Kotlin/Wasm は既存の Kotlin コードを流用したい場合や、Compose UI をそのまま使いたい場合に検討してください。
+
+## スマホ側UIライブラリ
+
+グラス表示ではなく、コンパニオンアプリ内の設定画面を作る場合は **even-toolkit** を使います。
+
+```bash
+npm install even-toolkit
+```
+
+- Reactコンポーネント 55個以上
+- ピクセルアートアイコン 191個
+- `useGlasses()` フック（ルートページのダブルタップ終了処理を自動対応）
+- デザイントークン・タイポグラフィCSS
+
+[デモ](https://even-demo.vercel.app) / [GitHub](https://github.com/fabioglimb/even-toolkit)
+
+## 参考アプリ（OSSサンプル）
+
+| アプリ | 特徴 | リポジトリ |
+|---|---|---|
+| demo | 全コンテナ・全イベントのショーケース。**まず読むべき** | [nickustinov/demo-app-g2](https://github.com/nickustinov/demo-app-g2) |
+| chess | テスト・lint・モジュール設計の参考 | [dmyster145/EvenChess](https://github.com/dmyster145/EvenChess) |
+| reddit | APIプロキシ・パッケージングの参考 | [fuutott/rdt-even-g2-rddit-client](https://github.com/fuutott/rdt-even-g2-rddit-client) |
+| weather | even-toolkit を使った設定UIの参考 | [nickustinov/weather-even-g2](https://github.com/nickustinov/weather-even-g2) |
+| tesla | バックエンドサーバー・画像レンダリング | [nickustinov/tesla-even-g2](https://github.com/nickustinov/tesla-even-g2) |
+| pong / snake | キャンバスレンダリングのゲーム | [pong](https://github.com/nickustinov/pong-even-g2) / [snake](https://github.com/nickustinov/snake-even-g2) |
+| flappy-g2 | タップ操作ゲーム・4bitグレースケール | [200even/flappy-g2](https://github.com/200even/flappy-g2) |
+
+## 関連リンク
+
+- [Even Hub 公式ドキュメント](https://hub.evenrealities.com/docs/getting-started/overview)
+- [even_hub_sdk (npm)](https://www.npmjs.com/package/@evenrealities/even_hub_sdk)
+- [evenhub-simulator (npm)](https://www.npmjs.com/package/@evenrealities/evenhub-simulator)
+- [evenhub-cli (npm)](https://www.npmjs.com/package/@evenrealities/evenhub-cli)
+- [コミュニティ Discord](https://discord.gg/Y4jHMCU4sv)
+- [even-g2-notes (コミュニティ資料)](https://github.com/nickustinov/even-g2-notes)
+- [even-dev (開発環境)](https://github.com/BxNxM/even-dev)
