@@ -116,6 +116,95 @@ await bridge.updateImageRawData({
 - **画像送信は直列** — 同時送信不可。必ず1つ完了後に次を送る
 - **コンテナ作成後は必ず内容を送信** — 作成直後はプレースホルダー（空）
 
+## OffscreenCanvas でフォントサイズ制限を突破
+
+SDKのフォントサイズは変更不可ですが、**OffscreenCanvas で任意サイズのテキストを画像に焼き込み**、`updateImageRawData` で送ることで制限を回避できます。
+
+```typescript
+async function drawTextAsImage(
+  bridge: EvenAppBridge,
+  text: string,
+  sizePx: number,
+  containerID: number,
+  containerName: string,
+  width: number,
+  height: number,
+) {
+  const canvas = new OffscreenCanvas(width, height)
+  const ctx = canvas.getContext('2d')!
+
+  ctx.fillStyle = '#000000'
+  ctx.fillRect(0, 0, width, height)
+  ctx.fillStyle = '#ffffff'
+  ctx.font = `${sizePx}px "Hiragino Sans"`
+  ctx.fillText(text, 4, sizePx)
+
+  // RGBA → 4bitグレースケール変換
+  const imageData = ctx.getImageData(0, 0, width, height)
+  const pixels = new Uint8Array(Math.ceil((width * height) / 2))
+  for (let i = 0; i < width * height; i++) {
+    const gray = Math.round(imageData.data[i * 4] / 255 * 15)
+    if (i % 2 === 0) pixels[i >> 1] = gray << 4
+    else pixels[i >> 1] |= gray
+  }
+
+  await bridge.updateImageRawData({ containerID, containerName, imageData: pixels })
+}
+```
+
+駅名・ETA・任意サイズの数値表示など、固定フォントでは表現できないUIに有効です。
+
+## PNG ハッシュ比較で無駄なBLE送信をスキップ
+
+BLE帯域は限られているため、**前回送信と同一内容の画像を送らない**ことが重要です。
+
+```typescript
+let lastImageHash = ''
+
+async function sendImageIfChanged(
+  bridge: EvenAppBridge,
+  canvas: OffscreenCanvas,
+  containerID: number,
+  containerName: string,
+) {
+  const blob = await canvas.convertToBlob({ type: 'image/png' })
+  const buf = await blob.arrayBuffer()
+
+  // 簡易ハッシュ（先頭256バイトで比較）
+  const hash = btoa(String.fromCharCode(...new Uint8Array(buf.slice(0, 256))))
+  if (hash === lastImageHash) return  // 変化なし → 送信スキップ
+  lastImageHash = hash
+
+  const pixels = await canvasToGrayscale4bit(canvas)
+  await bridge.updateImageRawData({ containerID, containerName, imageData: pixels })
+}
+```
+
+地図・ソナーなどリアルタイム更新が多い画面でBLE帯域を大幅に節約できます。
+
+## 画像コンテナを縦に2枚積む（200×200相当）
+
+画像コンテナの上限は 288×144px（シミュレーターは 200×100px）ですが、**2コンテナを縦に並べる**ことで有効表示領域を2倍にできます。
+
+```typescript
+// 上段: y=0〜99、下段: y=100〜199 → 合計200px相当
+const topImage = new ImageContainerProperty({
+  xPosition: 0, yPosition: 0,   width: 200, height: 100,
+  containerID: 2, containerName: 'mapTop',
+})
+const bottomImage = new ImageContainerProperty({
+  xPosition: 0, yPosition: 100, width: 200, height: 100,
+  containerID: 3, containerName: 'mapBottom',
+})
+```
+
+送信は必ず直列に行うこと（同時送信不可）:
+
+```typescript
+await bridge.updateImageRawData({ containerID: 2, containerName: 'mapTop',    imageData: topPixels })
+await bridge.updateImageRawData({ containerID: 3, containerName: 'mapBottom', imageData: bottomPixels })
+```
+
 ## GIFアニメーション（非公式・実験的）
 
 SDK公式は「no animations」と明記していますが、以下の手順で疑似アニメーションが実現できます。
@@ -311,8 +400,37 @@ function renderGrid(grid: string[][]): string {
 ```
 ▀ （上半ブロック）、▐ （右半ブロック）、░ ▓ （シェード）
 ▖▗▘▙▚▛▜▝▞▟ （四分割ブロック）
+▢ （U+25A2 白い正方形）→ □ （U+25A1）で代替
 ☀ ☁ ☂ ☃ （天気記号）
 ☠ ☢ ☣ ☮ ☯ ☺ ☻
+```
+
+## Canvas描画のパフォーマンス最適化
+
+画像コンテナを頻繁に更新するアプリ（地図・ゲーム等）では描画コストに注意が必要です。
+
+| 改善前 | 改善後 | 効果 |
+|---|---|---|
+| `fill()` を要素ごとに呼ぶ | `beginPath()` → まとめて `stroke()` | 描画コスト大幅削減 |
+| 定期ポーリングで再描画（1Hzなど） | データ変化検知時のみ再描画 | 無駄なBLE送信ゼロ |
+| 毎フレーム画像送信 | PNGハッシュ比較でスキップ | BLE帯域の節約 |
+| `fillText()` を多用 | ラベルを削除または最小化 | `fillText` のコストは高い |
+
+```typescript
+// 悪い例: fill() を個別に呼ぶ
+for (const polygon of polygons) {
+  ctx.beginPath()
+  drawPolygon(ctx, polygon)
+  ctx.fill()  // ← 数百回呼ぶと重い
+}
+
+// 良い例: パスをまとめて stroke()
+ctx.beginPath()
+for (const line of lines) {
+  ctx.moveTo(line.x1, line.y1)
+  ctx.lineTo(line.x2, line.y2)
+}
+ctx.stroke()  // ← 1回で済む
 ```
 
 ## ベストプラクティス

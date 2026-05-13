@@ -98,6 +98,62 @@ ls -lh my-app.ehpk
 
 生成した `.ehpk` ファイルをEven Hub開発者ポータルに提出します。審査・互換性チェック後、G2ユーザーに公開されます。
 
+## CloudFront Functions による APIキー Edge 注入（本番推奨）
+
+APIキーをクライアント（WebView）に露出させたくない場合、**AWS CloudFront Functions でリクエストにキーを動的注入**する構成が有効です。Even Hub の `app.json` whitelist も1ドメイン（CloudFrontのドメイン）に集約できます。
+
+### 構成
+
+```
+WebView → CloudFront（1ドメイン）
+              ├── /api/*    → api.example.com（APIキー注入）
+              ├── /static/* → S3（SPA本体）
+              └── /tiles/*  → 外部データソース
+```
+
+### CloudFront Function（APIキー注入）
+
+```javascript
+// CloudFront Function: viewer-request イベント
+function handler(event) {
+  var request = event.request
+  // エッジでAPIキーをクエリパラメータに追加
+  request.querystring['apiKey'] = { value: 'YOUR_API_KEY' }
+  return request
+}
+```
+
+### Terraform でのキー管理
+
+```terraform
+# Secrets Manager からキーを取得してFunctionに埋め込む
+data "aws_secretsmanager_secret_version" "api_key" {
+  secret_id = "myapp/api-key"
+}
+
+resource "aws_cloudfront_function" "api_proxy" {
+  code = templatefile("cf-function.js", {
+    api_key = data.aws_secretsmanager_secret_version.api_key.secret_string
+  })
+}
+```
+
+キーローテーション時は Secrets Manager 更新後に `terraform apply` を再実行するだけで1〜2分で全エッジに反映されます。
+
+### app.json の whitelist
+
+```json
+"permissions": [
+  {
+    "name": "network",
+    "desc": "データ取得",
+    "whitelist": ["https://your-cloudfront-domain.cloudfront.net"]
+  }
+]
+```
+
+CloudFront を一枚挟むことで、複数のAPIを使う場合も whitelist が1エントリで済みます。
+
 ## CORS の注意点
 
 Even AppはChromium（Android）またはWKWebView（iOS）のブラウザエンジンで動作するため、**完全なCORSが適用されます**。

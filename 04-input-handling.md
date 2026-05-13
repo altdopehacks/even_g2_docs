@@ -203,6 +203,32 @@ function onEvent(event: EvenHubEvent) {
 - [ ] 非ルートページでダブルタップ → 前の画面に戻る
 - [ ] `even-toolkit` の `useGlasses()` フックを使う場合は自動で対応済み
 
+## シミュレーターと実機のイベント差異
+
+一部のイベントでシミュレーターと実機の挙動が異なる場合があります。
+
+| イベント | 実機 | シミュレーター |
+|---|---|---|
+| `CLICK_EVENT` (type=0) | `sysEvent.eventType` が `undefined`（protobuf ゼロ値省略） | `sysEvent.eventType` が明示的に届く場合がある |
+| テキストコンテナへのクリック | `sysEvent` に届く | `sysEvent` に届く |
+
+シミュレーターで動作しても実機で動かない、またはその逆が起きた場合はイベントのルーティング差異を疑ってください。**最終確認は必ず実機で行うこと。**
+
+また、イベントリスナー内で `subscribe` 系の関数を使う際は TDZ（Temporal Dead Zone）に注意が必要です。
+
+```typescript
+// 危険: const の初期化前に同期コールバックが走る可能性がある
+const off = bridge.onEvenHubEvent((event) => {
+  off()  // ← off がまだ undefined の場合にクラッシュ
+})
+
+// 安全: let で先に初期化してから代入
+let off: () => void = () => {}
+off = bridge.onEvenHubEvent((event) => {
+  off()  // ← 安全
+})
+```
+
 ## ライフサイクルイベントの使い方
 
 | イベント | いつ使うか |
