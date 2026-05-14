@@ -28,6 +28,14 @@ Even Realities G2スマートグラス向けアプリ開発のリファレンス
 | [08-ble-protocol.md](08-ble-protocol.md) | 低レベルBLEプロトコル（上級者向け・SDK非経由の直接制御） |
 | [09-aivela-ring.md](09-aivela-ring.md) | AIVELA Ring Pro をG2入力デバイスとして使う方法・R1との比較 |
 
+## 開発ログ
+
+実際の開発中に踏んだはまりポイントの生ログ。知見は上記オフィシャルドキュメントにも反映済み。
+
+| ログ | 内容 |
+|---|---|
+| [logs/2026-05-15-helloworld-setup.md](logs/2026-05-15-helloworld-setup.md) | Hello World セットアップ（TypeScript競合・PowerShell・シミュレーター起動） |
+
 ## G2 ハードウェア仕様
 
 | 項目 | 仕様 |
