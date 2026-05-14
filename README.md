@@ -162,4 +162,4 @@ const { transcript, isListening, start, stop } = useSTT({
 - [evenhub-cli (npm)](https://www.npmjs.com/package/@evenrealities/evenhub-cli)
 - [コミュニティ Discord](https://discord.gg/Y4jHMCU4sv)
 - [even-g2-notes (コミュニティ資料)](https://github.com/nickustinov/even-g2-notes)
-- [even-dev (開発環境)](https://github.com/BxNxM/even-dev)
+- [even-dev (開発環境)](https://github.com/BxNxM/even-dev) — 複数アプリを切り替えられる統合ランチャー。21本のコミュニティアプリカタログ（`apps.json`）付き。`AUDIO_DEVICE` 変数でシミュレーターへのマイク入力テストも可能

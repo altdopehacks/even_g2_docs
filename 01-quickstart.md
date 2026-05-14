@@ -217,6 +217,20 @@ npx evenhub-simulator http://localhost:5173
 
 実機に近い表示（緑の発光）を確認するには、シミュレーターのUIでグロウエフェクトを有効にします。
 
+### マイク入力をシミュレーターでテストする（ASR開発）
+
+`AUDIO_DEVICE` 環境変数でシミュレーターに使用するオーディオ入力デバイスを指定できます。`--aid` フラグとして渡され、G2マイク相当の音声入力でASRをテストできます。
+
+```bash
+# macOS / Linux
+AUDIO_DEVICE="Built-in Microphone" npx evenhub-simulator http://localhost:5173
+
+# Windows（PowerShell）
+$env:AUDIO_DEVICE="マイク (Realtek Audio)"; npx evenhub-simulator http://localhost:5173
+```
+
+利用可能なデバイス名はOS のサウンド設定で確認してください。デバイス名を省略した場合はデフォルトのマイクが使用されます。
+
 ## 6. 実機でテスト
 
 PCとG2が同じWi-Fiに接続されている状態で：
